@@ -1,5 +1,9 @@
 import { supabase } from '@/lib/supabase'
 
+import Link from 'next/link'
+
+
+
 type InventoryItem = {
   id: string
   name: string
@@ -18,6 +22,7 @@ export default async function Home() {
   return (
     <main className="p-6">
       <h1 className="text-xl font-bold">Inventory</h1>
+      <Link className="underline" href="/crafting">Go to Crafting</Link>
       <ul>
         {data?.map(item => (
           <li key={item.id}>
