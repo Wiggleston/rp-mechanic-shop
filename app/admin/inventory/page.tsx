@@ -3,6 +3,9 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { supabaseServer } from '@/lib/supabaseServer'
+import AddItemForm from './AddItemForm'
+import InventoryRowForm from './InventoryRowForm'
+
 
 async function updateItem(formData: FormData) {
   'use server'
@@ -130,18 +133,7 @@ export default async function AdminInventoryPage() {
         <p>❌ Failed to load inventory: {error.message}</p>
       ) : null}
 
-      {/* Add Item */}
-      <section className="max-w-3xl border border-white/10 rounded p-4">
-        <h2 className="font-semibold mb-3">Add Item</h2>
-        <form action={addItem} className="grid gap-2 md:grid-cols-5">
-          <input name="name" placeholder="Item Name" className="rounded bg-black border border-white/20 p-2 md:col-span-2" />
-          <input name="category" placeholder="Category" className="rounded bg-black border border-white/20 p-2" />
-          <input name="stock" type="number" placeholder="Stock" defaultValue={0} className="rounded bg-black border border-white/20 p-2" />
-          <input name="location" placeholder="Location" className="rounded bg-black border border-white/20 p-2" />
-          <input name="notes" placeholder="Notes" className="rounded bg-black border border-white/20 p-2 md:col-span-5" />
-          <button className="rounded bg-white text-black font-semibold p-2 md:col-span-2">Add</button>
-        </form>
-      </section>
+      <AddItemForm />
 
       {/*Bulk Items*/}
 <section className="max-w-3xl border border-white/10 rounded p-4">
@@ -168,41 +160,15 @@ export default async function AdminInventoryPage() {
         <h2 className="font-semibold">Edit Existing Items</h2>
         <div className="space-y-3">
           {(data ?? []).map((item) => (
-            <form
-              key={item.id}
-              action={updateItem}
-              className="grid gap-2 md:grid-cols-6 border border-white/10 rounded p-3"
-            >
-              <input type="hidden" name="id" value={item.id} />
-
-              <div className="md:col-span-2">
-                <div className="font-semibold">{item.name}</div>
-                <div className="text-sm opacity-80">{item.category}</div>
-              </div>
-
-              <input
-                name="stock"
-                type="number"
-                defaultValue={item.stock ?? 0}
-                className="rounded bg-black border border-white/20 p-2"
-              />
-
-              <input
-                name="location"
-                defaultValue={item.location ?? ''}
-                className="rounded bg-black border border-white/20 p-2"
-              />
-
-              <input
-                name="notes"
-                defaultValue={item.notes ?? ''}
-                className="rounded bg-black border border-white/20 p-2 md:col-span-2"
-              />
-
-              <button className="rounded bg-white text-black font-semibold p-2">
-                Save
-              </button>
-            </form>
+            <InventoryRowForm
+                key={item.id}
+                id={item.id}
+                name={item.name}
+                category={item.category}
+                stock={item.stock ?? 0}
+                location={item.location}
+                notes={item.notes}
+            />
           ))}
         </div>
       </section>
