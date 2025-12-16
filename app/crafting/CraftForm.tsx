@@ -39,7 +39,6 @@ export default function CraftForm({ craftedItems }: { craftedItems: CraftedItem[
   const [tier, setTier] = useState<number>(1)
   const [quantity, setQuantity] = useState<number>(1)
 
-  const [status, setStatus] = useState<string>('')
 
   // Preview state
   const [previewLoading, setPreviewLoading] = useState(false)
@@ -151,27 +150,6 @@ export default function CraftForm({ craftedItems }: { craftedItems: CraftedItem[
     return quantity <= maxCraftable
   }, [craftedItemId, quantity, maxCraftable])
 
-  async function handleCraft() {
-    setStatus('Crafting...')
-
-    const { error } = await supabase.rpc('craft_item', {
-      p_crafted_item: craftedItemId,
-      p_tier: tier,
-      p_quantity: quantity,
-      p_user: 'Mechanic'
-    })
-
-    if (error) {
-      setStatus(`❌ ${error.message}`)
-      return
-    }
-
-    setStatus('✅ Crafted successfully!')
-    // Refresh preview after crafting (inventory changed)
-    // Easiest: just bump quantity state to trigger effect
-    setQuantity((q) => q)
-  }
-
   return (
     <div className="max-w-2xl space-y-4 rounded-lg border border-white/10 p-4">
       <div className="grid gap-4 md:grid-cols-3">
@@ -274,14 +252,6 @@ export default function CraftForm({ craftedItems }: { craftedItems: CraftedItem[
           </div>
         ) : null}
       </div>
-
-      <button
-        className="w-full rounded bg-white text-black font-semibold p-2 disabled:opacity-50"
-        onClick={handleCraft}
-        disabled={!canCraft || previewLoading}
-      >
-        Craft
-      </button>
 
       {status ? <p className="text-sm opacity-90">{status}</p> : null}
     </div>
