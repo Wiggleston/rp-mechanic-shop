@@ -252,8 +252,6 @@ export default function CraftForm({ craftedItems }: { craftedItems: CraftedItem[
           </div>
         ) : null}
       </div>
-
-      {status ? <p className="text-sm opacity-90">{status}</p> : null}
     </div>
   )
 }
