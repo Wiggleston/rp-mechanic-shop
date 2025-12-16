@@ -43,6 +43,67 @@ async function addItem(formData: FormData) {
   revalidatePath('/')
 }
 
+async function bulkUpdateStock(formData: FormData) {
+  'use server'
+
+  const raw = String(formData.get('bulk') ?? '')
+  if (!raw.trim()) return
+
+  // Parse lines like: "Engine Block | 10"
+  const parsed = raw
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const parts = line.split('|').map((p) => p.trim())
+      const name = parts[0] ?? ''
+      const stock = Number(parts[1] ?? NaN)
+      return { name, stock, line }
+    })
+
+  const badLines = parsed.filter((p) => !p.name || Number.isNaN(p.stock))
+  if (badLines.length > 0) {
+    // Stop early so you don’t accidentally half-apply.
+    throw new Error(
+      `Bad lines (use "Item Name | Number"):\n` + badLines.map((b) => b.line).join('\n')
+    )
+  }
+
+  const names = parsed.map((p) => p.name)
+
+  // Fetch all matching items once
+  const { data: items, error } = await supabaseServer
+    .from('inventory_items')
+    .select('id,name')
+    .in('name', names)
+
+  if (error) throw new Error(error.message)
+
+  const idByName = new Map((items ?? []).map((i) => [i.name, i.id]))
+  const missing = parsed.filter((p) => !idByName.has(p.name)).map((p) => p.name)
+
+  if (missing.length > 0) {
+    // Don’t apply partial updates unless you want it.
+    throw new Error(`These item names were not found:\n` + missing.join('\n'))
+  }
+
+  // Update each item (simple + clear)
+  for (const p of parsed) {
+    const id = idByName.get(p.name)!
+    const { error: updErr } = await supabaseServer
+      .from('inventory_items')
+      .update({ stock: p.stock })
+      .eq('id', id)
+
+    if (updErr) throw new Error(`Failed updating "${p.name}": ${updErr.message}`)
+  }
+
+  revalidatePath('/admin/inventory')
+  revalidatePath('/')
+  revalidatePath('/crafting')
+}
+
+
 export default async function AdminInventoryPage() {
   // Gate
   const cookieStore = await cookies()
@@ -81,6 +142,26 @@ export default async function AdminInventoryPage() {
           <button className="rounded bg-white text-black font-semibold p-2 md:col-span-2">Add</button>
         </form>
       </section>
+
+      {/*Bulk Items*/}
+<section className="max-w-3xl border border-white/10 rounded p-4">
+  <h2 className="font-semibold mb-2">Bulk Update Stock</h2>
+  <p className="text-sm opacity-80 mb-3">
+    Paste lines like <span className="font-mono">Engine Block | 10</span> (names must match exactly).
+  </p>
+
+  <form action={bulkUpdateStock} className="space-y-3">
+    <textarea
+      name="bulk"
+      rows={10}
+      placeholder={`Engine Block | 10\nPistons | 40\nCrankshaft | 8`}
+      className="w-full rounded bg-black border border-white/20 p-2 font-mono"
+    />
+    <button className="rounded bg-white text-black font-semibold p-2">
+      Apply Bulk Update
+    </button>
+  </form>
+</section>
 
       {/* Edit Items */}
       <section className="space-y-3">
