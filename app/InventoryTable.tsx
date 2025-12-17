@@ -26,8 +26,9 @@ function categoryChipClass(category: string) {
 }
 
 function lowStockRowClass(low: boolean) {
-  // Soft red highlight + subtle border glow
-  return low ? 'bg-red-500/10 hover:bg-red-500/20 ring-1 ring-red-500/30' : ''
+  return low
+    ? 'ring-2 ring-red-500/40'
+    : ''
 }
 
 export default function InventoryTable({ items }: { items: InventoryItem[] }) {
