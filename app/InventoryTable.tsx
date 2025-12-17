@@ -25,6 +25,11 @@ function categoryChipClass(category: string) {
   return 'bg-white/5 border-white/10'
 }
 
+function lowStockRowClass(low: boolean) {
+  // Soft red highlight + subtle border glow
+  return low ? 'bg-red-500/10 hover:bg-red-500/20 ring-1 ring-red-500/30' : ''
+}
+
 export default function InventoryTable({ items }: { items: InventoryItem[] }) {
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState('All')
@@ -102,9 +107,9 @@ export default function InventoryTable({ items }: { items: InventoryItem[] }) {
                   <tr
                     key={i.id}
                     className={[
-                      'border-t border-white/10',
+                      'border-t border-white/10 transition-colors',
                       idx % 2 === 0 ? 'bg-white/[0.02]' : '',
-                      'hover:bg-white/[0.06] transition-colors',
+                      lowStockRowClass(low),
                     ].join(' ')}
                   >
                     <td className="p-3 font-medium">{i.name}</td>
@@ -123,11 +128,15 @@ export default function InventoryTable({ items }: { items: InventoryItem[] }) {
                     <td className="p-3 opacity-80">{i.location ?? '—'}</td>
 
                     <td className="p-3 text-right">
-                      <span className={low ? 'font-semibold' : ''}>{i.stock}</span>
+                      <span className={['font-mono', low ? 'text-red-400 font-bold' : ''].join(' ')}>
+                        {i.stock}
+                      </span>
+
                       <span className="ml-2 text-xs opacity-70">low ≤ {threshold}</span>
+
                       {low ? (
-                        <span className="ml-2 inline-flex items-center rounded-full border border-white/10 bg-white/5 px-2 py-1 text-xs">
-                          Low
+                        <span className="ml-2 inline-flex items-center gap-1 rounded-full border border-red-500/30 bg-red-500/20 px-2 py-0.5 text-xs text-red-300 animate-pulse">
+                          ⚠ LOW
                         </span>
                       ) : null}
                     </td>
