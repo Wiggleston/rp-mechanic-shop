@@ -9,14 +9,14 @@ export default function BulkUpdateForm() {
 
     function downloadTemplate() {
         const text =
-        `# Bulk Update Template
-        # One item per line: Item Name | Number
-        # Names must match exactly
+    `# Bulk Update Template
+    # One item per line: Item Name | Number
+    # Names must match exactly
 
-        Engine Block | 10
-        Pistons | 40
-        Crankshaft | 8
-        `
+    Engine Block | 10
+    Pistons | 40
+    Sparkplug | 8
+    `
 
         const blob = new Blob([text], { type: 'text/plain;charset=utf-8' })
         const url = URL.createObjectURL(blob)
