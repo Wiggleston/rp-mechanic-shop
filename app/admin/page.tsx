@@ -1,14 +1,11 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 
-/**
- * Server Action — THIS is where cookies are allowed
- */
 export async function adminLogin(formData: FormData) {
   'use server'
 
-  const pin = String(formData.get('pin') ?? '')
-  const correct = process.env.ADMIN_PIN ?? ''
+  const pin = String(formData.get('pin') ?? '').trim()
+  const correct = String(process.env.ADMIN_PIN ?? '').trim()
 
   if (pin && correct && pin === correct) {
     const cookieStore = await cookies()
@@ -24,16 +21,16 @@ export async function adminLogin(formData: FormData) {
   redirect('/admin?err=1')
 }
 
-export default function AdminLoginPage({
-  searchParams,
-}: {
-  searchParams: { err?: string }
-}) {
+export default async function AdminLoginPage(props: { searchParams?: any }) {
+  // Works whether searchParams is a plain object or a Promise (await handles both)
+  const sp = await props.searchParams
+  const err = sp?.err
+
   return (
     <main className="p-6 max-w-sm">
       <h1 className="text-xl font-bold mb-4">Admin</h1>
 
-      {searchParams?.err ? <p className="mb-3">❌ Wrong PIN</p> : null}
+      {err ? <p className="mb-3">❌ Wrong PIN</p> : null}
 
       <form action={adminLogin} className="space-y-3">
         <input
