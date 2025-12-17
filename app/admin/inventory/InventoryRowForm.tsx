@@ -54,6 +54,14 @@ export default function InventoryRowForm(props: {
         className="rounded bg-black border border-white/20 p-2 md:col-span-2"
       />
 
+      <input
+        name="low_stock_threshold"
+        type="number"
+        min={0}
+        defaultValue={props.low_stock_threshold ?? 2}
+        className="rounded bg-black border border-white/20 p-2"
+      />
+
       <SubmitButton idleText="Save" pendingText="Saving..." />
     </form>
   )
