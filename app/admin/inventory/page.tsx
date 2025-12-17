@@ -44,14 +44,15 @@ export default async function AdminInventoryPage() {
 
       <section className="space-y-3">
         <h2 className="font-semibold">Edit Existing Items</h2>
-        <div className="hidden md:grid md:grid-cols-8 gap-2 px-3 py-2 text-xs uppercase tracking-wide opacity-70 border border-white/10 rounded">
+        <div className="hidden md:grid md:grid-cols-8 gap-2 px-3 py-2 text-xs uppercase tracking-wide opacity-70 border border-white/10 rounded bg-black/70 sticky top-0 z-10 backdrop-blur">
         <div className="md:col-span-2">Item</div>
         <div>Stock</div>
         <div>Low ≤</div>
         <div className="md:col-span-2">Location</div>
         <div className="md:col-span-2">Notes</div>
-        <div className="text-right">Action</div>
-        </div>
+        <div className="text-right"></div>
+    </div>
+
 
         <div className="space-y-3">
           {(data ?? []).map((item) => (
