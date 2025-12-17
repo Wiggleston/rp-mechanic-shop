@@ -121,6 +121,8 @@ const filtered = useMemo(() => {
               {filtered.map((i, idx) => {
                 const threshold = typeof i.low_stock_threshold === 'number' ? i.low_stock_threshold : 2
                 const low = i.stock <= threshold
+                const neededToClearLow = Math.max(0, (threshold + 1) - i.stock)
+
 
                 return (
                   <tr
@@ -160,7 +162,18 @@ const filtered = useMemo(() => {
                       ) : null}
                     </td>
 
-                    <td className="p-3 opacity-70">{i.notes ?? '—'}</td>
+                    <td className="p-3 opacity-70">
+  <                     div className="flex flex-col gap-1">
+                           <div>{i.notes ?? '—'}</div>
+
+                           {low ? (
+                      <div className="text-xs text-red-300">
+                       Need {Math.max(0, (threshold + 1) - i.stock)} to clear low threshold
+                     </div>
+                ) : null}
+                   </div>
+                </td>
+
                   </tr>
                 )
               })}
