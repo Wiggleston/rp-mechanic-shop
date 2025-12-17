@@ -4,6 +4,8 @@ import { redirect } from 'next/navigation'
 import { supabaseServer } from '@/lib/supabaseServer'
 import AddItemForm from './AddItemForm'
 import InventoryRowForm from './InventoryRowForm'
+import BulkUpdateForm from './BulkUpdateForm'
+
 
 type InventoryItem = {
   id: string
@@ -41,7 +43,8 @@ export default async function AdminInventoryPage() {
       {error ? <p>❌ Failed to load inventory: {error.message}</p> : null}
 
       <AddItemForm />
-
+      <BulkUpdateForm />
+      
       <section className="space-y-3">
         <h2 className="font-semibold">Edit Existing Items</h2>
         <div className="hidden md:grid md:grid-cols-8 gap-2 px-3 py-2 text-xs uppercase tracking-wide opacity-70 border border-white/10 rounded bg-black/70 sticky top-0 z-10 backdrop-blur">
