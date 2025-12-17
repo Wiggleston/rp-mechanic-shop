@@ -9,16 +9,22 @@ export default function AddItemForm() {
 
   return (
     <section className="max-w-3xl border border-white/10 rounded p-4">
-      <h2 className="font-semibold mb-3">Add Item</h2>
+      <h2 className="font-semibold mb-2">Add Item</h2>
 
-      {state.message ? <p className="mb-2 text-sm">{state.ok ? '✅ ' : '❌ '}{state.message}</p> : null}
+      {state.message ? (
+        <p className="mb-3 text-sm">{state.ok ? '✅ ' : '❌ '}{state.message}</p>
+      ) : (
+        <p className="mb-3 text-sm opacity-70">Add new inventory parts to your shop.</p>
+      )}
 
-      <form action={formAction} className="grid gap-2 md:grid-cols-5">
+      <form action={formAction} className="grid gap-2 md:grid-cols-6">
         <input name="name" placeholder="Item Name" className="rounded bg-black border border-white/20 p-2 md:col-span-2" />
         <input name="category" placeholder="Category" className="rounded bg-black border border-white/20 p-2" />
         <input name="stock" type="number" placeholder="Stock" defaultValue={0} className="rounded bg-black border border-white/20 p-2" />
+        <input name="low_stock_threshold" type="number" min={0} placeholder="Low ≤" defaultValue={2} className="rounded bg-black border border-white/20 p-2" />
         <input name="location" placeholder="Location" className="rounded bg-black border border-white/20 p-2" />
-        <input name="notes" placeholder="Notes" className="rounded bg-black border border-white/20 p-2 md:col-span-5" />
+
+        <input name="notes" placeholder="Notes" className="rounded bg-black border border-white/20 p-2 md:col-span-6" />
 
         <div className="md:col-span-2">
           <SubmitButton idleText="Add" pendingText="Adding..." />

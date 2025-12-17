@@ -9,12 +9,13 @@ export async function updateItemAction(_prevState: any, formData: FormData) {
     const stock = Number(formData.get('stock') ?? 0)
     const location = String(formData.get('location') ?? '')
     const notes = String(formData.get('notes') ?? '')
+    const low_stock_threshold = Number(formData.get('low_stock_threshold') ?? 2)
 
     if (!id) return { ok: false, message: 'Missing item id.' }
 
     const { error } = await supabaseServer
       .from('inventory_items')
-      .update({ stock, location, notes })
+      .update({ stock, location, notes, low_stock_threshold })
       .eq('id', id)
 
     if (error) return { ok: false, message: error.message }
@@ -35,12 +36,13 @@ export async function addItemAction(_prevState: any, formData: FormData) {
     const stock = Number(formData.get('stock') ?? 0)
     const location = String(formData.get('location') ?? '')
     const notes = String(formData.get('notes') ?? '')
+    const low_stock_threshold = Number(formData.get('low_stock_threshold') ?? 2)
 
     if (!name || !category) return { ok: false, message: 'Name + Category required.' }
 
     const { error } = await supabaseServer
       .from('inventory_items')
-      .insert({ name, category, stock, location, notes })
+      .insert({ name, category, stock, location, notes, low_stock_threshold })
 
     if (error) return { ok: false, message: error.message }
 
