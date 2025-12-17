@@ -11,7 +11,7 @@ export default function InventoryRowForm(props: {
   stock: number
   location: string | null
   notes: string | null
-  low_stock_threshold: number
+  low_stock_threshold?: number
 }) {
   const [state, formAction] = useFormState(updateItemAction, { ok: false, message: '' })
 
