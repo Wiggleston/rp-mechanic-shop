@@ -39,20 +39,38 @@ export default function InventoryTable({ items }: { items: InventoryItem[] }) {
     return ['All', ...Array.from(set).sort((a, b) => a.localeCompare(b))]
   }, [items])
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    return items.filter((i) => {
-      const matchQ =
-        !q ||
-        i.name.toLowerCase().includes(q) ||
-        i.category.toLowerCase().includes(q) ||
-        (i.location ?? '').toLowerCase().includes(q) ||
-        (i.notes ?? '').toLowerCase().includes(q)
+const filtered = useMemo(() => {
+  const q = query.trim().toLowerCase()
 
-      const matchCat = category === 'All' || i.category === category
-      return matchQ && matchCat
-    })
-  }, [items, query, category])
+  const base = items.filter((i) => {
+    const matchQ =
+      !q ||
+      i.name.toLowerCase().includes(q) ||
+      i.category.toLowerCase().includes(q) ||
+      (i.location ?? '').toLowerCase().includes(q) ||
+      (i.notes ?? '').toLowerCase().includes(q)
+
+    const matchCat = category === 'All' || i.category === category
+    return matchQ && matchCat
+  })
+
+  // Pin low-stock items to the top
+  return base.sort((a, b) => {
+    const aThreshold = typeof a.low_stock_threshold === 'number' ? a.low_stock_threshold : 2
+    const bThreshold = typeof b.low_stock_threshold === 'number' ? b.low_stock_threshold : 2
+
+    const aLow = a.stock <= aThreshold
+    const bLow = b.stock <= bThreshold
+
+    if (aLow !== bLow) return aLow ? -1 : 1
+
+    // Within the same group, sort by category then name
+    const cat = a.category.localeCompare(b.category)
+    if (cat !== 0) return cat
+    return a.name.localeCompare(b.name)
+  })
+}, [items, query, category])
+
 
   return (
     <div className="space-y-4">
