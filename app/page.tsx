@@ -3,7 +3,9 @@ import InventoryTable, { type InventoryItem } from './InventoryTable'
 import { supabaseServer } from '@/lib/supabaseServer'
 
 export default async function Home() {
-  const { data, error } = await supabaseServer
+  const supabase = await supabaseServer()
+
+  const { data, error } = await supabase
     .from('inventory_items')
     .select('id,name,category,stock,location,notes,low_stock_threshold')
     .order('category')

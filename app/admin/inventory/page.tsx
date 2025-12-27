@@ -3,9 +3,8 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { supabaseServer } from '@/lib/supabaseServer'
 import AddItemForm from './AddItemForm'
-import InventoryRowForm from './InventoryRowForm'
 import BulkUpdateForm from './BulkUpdateForm'
-
+import InventoryRowForm from './InventoryRowForm'
 
 type InventoryItem = {
   id: string
@@ -18,11 +17,14 @@ type InventoryItem = {
 }
 
 export default async function AdminInventoryPage() {
+  // keep your current cookie gate for now (we’ll replace with auth roles soon)
   const cookieStore = await cookies()
   const isAdmin = cookieStore.get('admin')?.value === '1'
   if (!isAdmin) redirect('/admin')
 
-  const { data, error } = await supabaseServer
+  const supabase = await supabaseServer()
+
+  const { data, error } = await supabase
     .from('inventory_items')
     .select('id,name,category,stock,location,notes,low_stock_threshold')
     .order('category')
@@ -44,18 +46,19 @@ export default async function AdminInventoryPage() {
 
       <AddItemForm />
       <BulkUpdateForm />
-      
+
       <section className="space-y-3">
         <h2 className="font-semibold">Edit Existing Items</h2>
-        <div className="hidden md:grid md:grid-cols-8 gap-2 px-3 py-2 text-xs uppercase tracking-wide opacity-70 border border-white/10 rounded bg-black/70 sticky top-0 z-10 backdrop-blur">
-        <div className="md:col-span-2">Item</div>
-        <div>Stock</div>
-        <div>Low ≤</div>
-        <div className="md:col-span-2">Location</div>
-        <div className="md:col-span-2">Notes</div>
-        <div className="text-right"></div>
-    </div>
 
+        {/* Sticky header */}
+        <div className="hidden md:grid md:grid-cols-8 gap-2 px-3 py-2 text-xs uppercase tracking-wide opacity-70 border border-white/10 rounded bg-black/70 sticky top-0 z-10 backdrop-blur">
+          <div className="md:col-span-2">Item</div>
+          <div>Stock</div>
+          <div>Low ≤</div>
+          <div className="md:col-span-2">Location</div>
+          <div className="md:col-span-2">Notes</div>
+          <div className="text-right"></div>
+        </div>
 
         <div className="space-y-3">
           {(data ?? []).map((item) => (

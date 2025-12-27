@@ -2,48 +2,44 @@
 
 import { useMemo, useState } from 'react'
 import { useFormState } from 'react-dom'
-import SubmitButton from './SubmitButton'
-import { saveRecipeAction } from './actions'
+import type { CraftedItem, InventoryItem } from './page'
+import SubmitButton from '../inventory/SubmitButton'
+import { loadRecipeComponentsAction, upsertRecipeAction } from './actions'
 
-type CraftedItem = { id: string; name: string }
-type InventoryItem = { id: string; name: string; category: string }
+type LoadedComp = { inventory_item_id: string; qty_required: number }
 
-export default function RecipeBuilder({
-  craftedItems,
-  inventoryItems,
-}: {
+export default function RecipesClient(props: {
   craftedItems: CraftedItem[]
   inventoryItems: InventoryItem[]
 }) {
-  const [craftedId, setCraftedId] = useState<string>(craftedItems[0]?.id ?? '')
+  const [craftedItemId, setCraftedItemId] = useState(props.craftedItems[0]?.id ?? '')
   const [tier, setTier] = useState<number>(1)
 
-  // id -> qty (if present, it’s selected)
+  // selection state: itemId -> qty_required
   const [selected, setSelected] = useState<Record<string, number>>({})
 
-  const [state, formAction] = useFormState(saveRecipeAction, { ok: false, message: '' })
+  const [saveState, saveAction] = useFormState(upsertRecipeAction, { ok: false, message: '' })
+  const [loadState, loadAction] = useFormState(loadRecipeComponentsAction, {
+    ok: false,
+    message: '',
+    components: [] as LoadedComp[],
+  })
 
   const grouped = useMemo(() => {
     const map = new Map<string, InventoryItem[]>()
-    for (const item of inventoryItems) {
-      if (!map.has(item.category)) map.set(item.category, [])
-      map.get(item.category)!.push(item)
+    for (const it of props.inventoryItems) {
+      const key = it.category || 'Other'
+      if (!map.has(key)) map.set(key, [])
+      map.get(key)!.push(it)
     }
     return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0]))
-  }, [inventoryItems])
+  }, [props.inventoryItems])
 
-  const componentsJson = useMemo(() => {
-    const arr = Object.entries(selected)
-      .filter(([_, qty]) => qty > 0)
-      .map(([inventory_item_id, qty_required]) => ({ inventory_item_id, qty_required }))
-    return JSON.stringify(arr)
-  }, [selected])
-
-  function toggleItem(id: string, checked: boolean) {
+  function toggle(id: string, on: boolean) {
     setSelected((prev) => {
       const next = { ...prev }
-      if (checked) next[id] = next[id] ?? 1
-      else delete next[id]
+      if (!on) delete next[id]
+      else next[id] = next[id] ?? 1
       return next
     })
   }
@@ -52,24 +48,38 @@ export default function RecipeBuilder({
     setSelected((prev) => ({ ...prev, [id]: qty }))
   }
 
+  // When loadState.components changes, apply it to selected
+  useMemo(() => {
+    if (!loadState?.components) return
+    const next: Record<string, number> = {}
+    for (const c of loadState.components) next[c.inventory_item_id] = c.qty_required
+    setSelected(next)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(loadState.components)])
+
+  const componentsJson = useMemo(() => {
+    return JSON.stringify(
+      Object.entries(selected).map(([inventory_item_id, qty_required]) => ({
+        inventory_item_id,
+        qty_required,
+      }))
+    )
+  }, [selected])
+
   return (
-    <main className="p-6 space-y-6">
-      <h1 className="text-xl font-bold">Admin — Recipe Builder</h1>
+    <div className="space-y-6">
+      <section className="max-w-3xl border border-white/10 rounded p-4 space-y-3">
+        <h2 className="font-semibold">Recipe Builder</h2>
 
-      {craftedItems.length === 0 ? (
-        <p>❌ No crafted items found. Add some in Supabase first.</p>
-      ) : null}
-
-      <form action={formAction} className="space-y-4">
-        <div className="grid gap-3 md:grid-cols-3 max-w-3xl border border-white/10 rounded p-4">
-          <div className="md:col-span-2">
+        <div className="grid gap-3 md:grid-cols-3 items-end">
+          <div>
             <label className="block text-sm mb-1">Crafted Item</label>
             <select
               className="w-full rounded bg-black border border-white/20 p-2"
-              value={craftedId}
-              onChange={(e) => setCraftedId(e.target.value)}
+              value={craftedItemId}
+              onChange={(e) => setCraftedItemId(e.target.value)}
             >
-              {craftedItems.map((c) => (
+              {props.craftedItems.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
                 </option>
@@ -92,64 +102,89 @@ export default function RecipeBuilder({
             </select>
           </div>
 
-          {/* Hidden values for server action */}
-          <input type="hidden" name="crafted_item_id" value={craftedId} />
-          <input type="hidden" name="tier" value={tier} />
-          <input type="hidden" name="components_json" value={componentsJson} />
+          {/* Load existing */}
+          <form action={loadAction} className="flex justify-end">
+            <input type="hidden" name="crafted_item_id" value={craftedItemId} />
+            <input type="hidden" name="tier" value={tier} />
+            <SubmitButton idleText="Load Existing" pendingText="Loading..." />
+          </form>
+        </div>
 
-          <div className="md:col-span-3 flex items-center justify-between gap-3">
-            <div className="text-sm">
-              {state.message ? (
-                <span>{state.ok ? '✅ ' : '❌ '}{state.message}</span>
-              ) : (
-                <span className="opacity-80">Select components + qty, then save.</span>
-              )}
-            </div>
-            <SubmitButton idle="Save Recipe" pending="Saving..." />
+        {loadState.message ? (
+          <p className="text-sm whitespace-pre-line">{loadState.ok ? '✅ ' : '❌ '}{loadState.message}</p>
+        ) : null}
+      </section>
+
+      {/* Inventory picker */}
+      <section className="border border-white/10 rounded p-4 space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="font-semibold">Select Components</h2>
+          <div className="text-sm opacity-70">
+            Selected: {Object.keys(selected).length}
           </div>
         </div>
 
-        <div className="space-y-4">
-          {grouped.map(([category, items]) => (
-            <section key={category} className="border border-white/10 rounded p-4">
-              <h2 className="font-semibold mb-3">{category}</h2>
+        <div className="space-y-5">
+          {grouped.map(([cat, items]) => (
+            <div key={cat} className="space-y-2">
+              <div className="text-sm font-semibold opacity-80">{cat}</div>
 
-              <div className="space-y-2">
-                {items.map((item) => {
-                  const isChecked = selected[item.id] != null
-                  const qty = selected[item.id] ?? 1
+              <div className="grid gap-2 md:grid-cols-2">
+                {items.map((it) => {
+                  const checked = selected[it.id] != null
                   return (
-                    <div key={item.id} className="grid gap-2 md:grid-cols-6 items-center border-t border-white/10 pt-2">
-                      <label className="md:col-span-3 flex items-center gap-2">
+                    <div
+                      key={it.id}
+                      className="flex items-center justify-between gap-3 rounded border border-white/10 bg-white/[0.03] p-3"
+                    >
+                      <label className="flex items-center gap-2">
                         <input
                           type="checkbox"
-                          checked={isChecked}
-                          onChange={(e) => toggleItem(item.id, e.target.checked)}
+                          checked={checked}
+                          onChange={(e) => toggle(it.id, e.target.checked)}
                         />
-                        <span>{item.name}</span>
+                        <span className="font-medium">{it.name}</span>
+                        <span className="text-xs opacity-70">(stock {it.stock})</span>
                       </label>
 
-                      <div className="md:col-span-2">
-                        <input
-                          type="number"
-                          min={1}
-                          disabled={!isChecked}
-                          value={qty}
-                          onChange={(e) => setQty(item.id, Number(e.target.value))}
-                          className="w-full rounded bg-black border border-white/20 p-2 disabled:opacity-50"
-                          placeholder="Qty"
-                        />
-                      </div>
-
-                      <div className="text-sm opacity-70">per craft</div>
+                      <input
+                        type="number"
+                        min={1}
+                        disabled={!checked}
+                        value={checked ? selected[it.id] : 1}
+                        onChange={(e) => setQty(it.id, Number(e.target.value))}
+                        className="w-20 rounded bg-black border border-white/20 p-2 text-right disabled:opacity-40"
+                        title="Qty required"
+                      />
                     </div>
                   )
                 })}
               </div>
-            </section>
+            </div>
           ))}
         </div>
-      </form>
-    </main>
+      </section>
+
+      {/* Save */}
+      <section className="max-w-3xl border border-white/10 rounded p-4 space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="font-semibold">Save Recipe</h2>
+          <div className="text-sm opacity-70">
+            {craftedItemId ? 'Ready' : 'Pick an item'}
+          </div>
+        </div>
+
+        {saveState.message ? (
+          <p className="text-sm whitespace-pre-line">{saveState.ok ? '✅ ' : '❌ '}{saveState.message}</p>
+        ) : null}
+
+        <form action={saveAction} className="flex justify-end">
+          <input type="hidden" name="crafted_item_id" value={craftedItemId} />
+          <input type="hidden" name="tier" value={tier} />
+          <input type="hidden" name="components_json" value={componentsJson} />
+          <SubmitButton idleText="Save Recipe" pendingText="Saving..." />
+        </form>
+      </section>
+    </div>
   )
 }

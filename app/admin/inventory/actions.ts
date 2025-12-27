@@ -13,7 +13,9 @@ export async function updateItemAction(_prevState: any, formData: FormData) {
 
     if (!id) return { ok: false, message: 'Missing item id.' }
 
-    const { error } = await supabaseServer
+    const supabase = await supabaseServer()
+
+    const { error } = await supabase
       .from('inventory_items')
       .update({ stock, location, notes, low_stock_threshold })
       .eq('id', id)
@@ -40,7 +42,9 @@ export async function addItemAction(_prevState: any, formData: FormData) {
 
     if (!name || !category) return { ok: false, message: 'Name + Category required.' }
 
-    const { error } = await supabaseServer
+    const supabase = await supabaseServer()
+
+    const { error } = await supabase
       .from('inventory_items')
       .insert({ name, category, stock, location, notes, low_stock_threshold })
 
@@ -78,9 +82,10 @@ export async function bulkUpdateStockAction(_prevState: any, formData: FormData)
       }
     }
 
-    const names = parsed.map((p) => p.name)
+    const supabase = await supabaseServer()
 
-    const { data: items, error } = await supabaseServer
+    const names = parsed.map((p) => p.name)
+    const { data: items, error } = await supabase
       .from('inventory_items')
       .select('id,name')
       .in('name', names)
@@ -89,14 +94,11 @@ export async function bulkUpdateStockAction(_prevState: any, formData: FormData)
 
     const idByName = new Map((items ?? []).map((i) => [i.name, i.id]))
     const missing = parsed.filter((p) => !idByName.has(p.name)).map((p) => p.name)
-
-    if (missing.length > 0) {
-      return { ok: false, message: `These item names were not found:\n${missing.join('\n')}` }
-    }
+    if (missing.length > 0) return { ok: false, message: `These item names were not found:\n${missing.join('\n')}` }
 
     for (const p of parsed) {
       const id = idByName.get(p.name)!
-      const { error: updErr } = await supabaseServer
+      const { error: updErr } = await supabase
         .from('inventory_items')
         .update({ stock: p.stock })
         .eq('id', id)
@@ -107,10 +109,8 @@ export async function bulkUpdateStockAction(_prevState: any, formData: FormData)
     revalidatePath('/admin/inventory')
     revalidatePath('/')
     revalidatePath('/crafting')
-
     return { ok: true, message: 'Bulk update applied ✅' }
   } catch (e: any) {
     return { ok: false, message: e?.message ?? 'Bulk update failed.' }
   }
 }
-
