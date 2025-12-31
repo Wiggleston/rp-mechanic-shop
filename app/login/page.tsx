@@ -4,17 +4,21 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 
 export default function LoginPage() {
-  async function signInWithDiscord() {
-    const origin =
-      typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'
+async function signInWithDiscord() {
+  const origin =
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000')
 
-    await supabase.auth.signInWithOAuth({
-      provider: 'discord',
-      options: {
-        redirectTo: `${origin}/auth/callback`,
-      },
-    })
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'discord',
+    options: { redirectTo: `${origin}/auth/callback` },
+  })
+
+  if (error) {
+    console.error(error.message)
   }
+}
+
 
   return (
     <main className="min-h-[70vh] p-6 flex items-center justify-center">

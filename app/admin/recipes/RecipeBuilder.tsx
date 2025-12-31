@@ -8,7 +8,7 @@ import { loadRecipeComponentsAction, upsertRecipeAction } from './actions'
 
 type LoadedComp = { inventory_item_id: string; qty_required: number }
 
-export default function RecipesClient(props: {
+export default function RecipeBuilder(props: {
   craftedItems: CraftedItem[]
   inventoryItems: InventoryItem[]
 }) {
