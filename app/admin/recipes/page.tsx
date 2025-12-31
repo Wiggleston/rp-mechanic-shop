@@ -2,7 +2,8 @@ import Link from 'next/link'
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { supabaseServer } from '@/lib/supabaseServer'
-import RecipesClient from './RecipesClient'
+import RecipeBuilder from './RecipeBuilder'
+
 
 export type CraftedItem = { id: string; name: string }
 export type InventoryItem = { id: string; name: string; category: string; stock: number }
@@ -42,7 +43,7 @@ export default async function AdminRecipesPage() {
       {craftedErr ? <p>❌ Crafted items error: {craftedErr.message}</p> : null}
       {invErr ? <p>❌ Inventory items error: {invErr.message}</p> : null}
 
-      <RecipesClient
+      <RecipeBuilder
         craftedItems={craftedItems ?? []}
         inventoryItems={inventoryItems ?? []}
       />
