@@ -1,23 +1,29 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
 export default function AuthCallbackPage() {
   const router = useRouter()
+  const sp = useSearchParams()
 
   useEffect(() => {
-    // If tokens are in the hash, Supabase client can read them and store session
-    supabase.auth.getSession().then(() => {
-      router.replace('/')
+    async function finish() {
+      // If Supabase returned a code or hash, this will establish the session client-side
+      await supabase.auth.getSession()
+
+      const next = sp.get('next') ?? '/'
+      router.replace(next)
       router.refresh()
-    })
-  }, [router])
+    }
+
+    finish()
+  }, [router, sp])
 
   return (
-    <main className="p-6">
-      <p>Finishing sign-in…</p>
+    <main className="min-h-[60vh] p-6 flex items-center justify-center">
+      <p className="opacity-80">Finishing sign-in…</p>
     </main>
   )
 }
