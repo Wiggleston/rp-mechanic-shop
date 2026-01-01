@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import "./globals.css"
-import UserBar from "./components/UserBar"
+import UserBarClient from "./components/UserBarClient"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,7 +29,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-black text-white`}
       >
         {/* Logged-in user bar */}
-        <UserBar />
+        <UserBarClient />
 
         {/* Page content */}
         <main className="min-h-screen">
