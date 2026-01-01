@@ -9,10 +9,14 @@ export type CraftedItem = { id: string; name: string }
 export type InventoryItem = { id: string; name: string; category: string; stock: number }
 
 export default async function AdminRecipesPage() {
-  // Keep your existing admin PIN gate for now
-  const cookieStore = await cookies()
-  const isAdmin = cookieStore.get('admin')?.value === '1'
-  if (!isAdmin) redirect('/admin')
+import { requireRole } from '@/lib/requireRole'
+
+export default async function AdminXyzPage() {
+  await requireRole(['manager','admin'])
+  ...
+}
+
+
 
   const supabase = await supabaseServer()
 

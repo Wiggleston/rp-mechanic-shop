@@ -18,9 +18,10 @@ type InventoryItem = {
 
 export default async function AdminInventoryPage() {
   // keep your current cookie gate for now (we’ll replace with auth roles soon)
-  const cookieStore = await cookies()
-  const isAdmin = cookieStore.get('admin')?.value === '1'
-  if (!isAdmin) redirect('/admin')
+const cookieStore = await cookies()
+const isAdmin = cookieStore.get('admin')?.value === '1'
+if (!isAdmin) redirect('/admin')
+
 
   const supabase = await supabaseServer()
 

@@ -80,7 +80,14 @@ export default function UserBarClient() {
       <div className="flex items-center gap-4 text-sm">
         <Link className="underline" href="/">Inventory</Link>
         <Link className="underline" href="/crafting">Crafting</Link>
-        <Link className="underline" href="/admin/inventory">Admin</Link>
+                {role === 'manager' || role === 'admin' ? (
+        <Link href="/admin/inventory">Admin Inventory</Link>
+        ) : null}
+
+        {role === 'admin' ? (
+        <Link href="/admin/users">User Management</Link>
+        ) : null}
+
         {email ? (
           <button className="underline" onClick={logout}>Logout</button>
         ) : (
