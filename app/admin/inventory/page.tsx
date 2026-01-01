@@ -1,7 +1,6 @@
 import Link from 'next/link'
-import { cookies } from 'next/headers'
-import { redirect } from 'next/navigation'
 import { supabaseServer } from '@/lib/supabaseServer'
+import { requireRole } from '@/lib/requireRole'
 import AddItemForm from './AddItemForm'
 import BulkUpdateForm from './BulkUpdateForm'
 import InventoryRowForm from './InventoryRowForm'
@@ -17,13 +16,10 @@ type InventoryItem = {
 }
 
 export default async function AdminInventoryPage() {
-  // keep your current cookie gate for now (we’ll replace with auth roles soon)
-const cookieStore = await cookies()
-const isAdmin = cookieStore.get('admin')?.value === '1'
-if (!isAdmin) redirect('/admin')
+  // 🔐 Role-based access (replaces Admin PIN)
+  const role = await requireRole(['manager', 'admin'])
 
-
-  const supabase = await supabaseServer()
+  const supabase = supabaseServer
 
   const { data, error } = await supabase
     .from('inventory_items')
@@ -36,14 +32,21 @@ if (!isAdmin) redirect('/admin')
     <main className="p-6 space-y-6">
       <div className="flex flex-wrap gap-4 items-center justify-between">
         <h1 className="text-xl font-bold">Admin — Inventory</h1>
+
         <div className="flex gap-4">
           <Link className="underline" href="/">Inventory View</Link>
           <Link className="underline" href="/crafting">Crafting</Link>
           <Link className="underline" href="/admin/recipes">Recipes</Link>
+
+          {role === 'admin' && (
+            <Link className="underline" href="/admin/users">
+              User Management
+            </Link>
+          )}
         </div>
       </div>
 
-      {error ? <p>❌ Failed to load inventory: {error.message}</p> : null}
+      {error && <p>❌ Failed to load inventory: {error.message}</p>}
 
       <AddItemForm />
       <BulkUpdateForm />
