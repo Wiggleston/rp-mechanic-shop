@@ -9,13 +9,18 @@ export default function LoginClient() {
   const next = search.get('next') ?? '/'
   const err = search.get('err')
 
-  async function signInWithDiscord() {
-    const origin = window.location.origin
-    await supabase.auth.signInWithOAuth({
-      provider: 'discord',
-      options: { redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}` },
-    })
-  }
+ async function signInWithDiscord() {
+  const origin = window.location.origin
+  const next = new URLSearchParams(window.location.search).get('next') ?? '/'
+
+  await supabase.auth.signInWithOAuth({
+    provider: 'discord',
+    options: {
+      redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
+    },
+  })
+}
+
 
   return (
     <main className="min-h-[70vh] p-6 flex items-center justify-center">
