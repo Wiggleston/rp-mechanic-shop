@@ -4,14 +4,11 @@ import { supabase } from '@/lib/supabase'
 
 export default function LoginPage() {
   async function signInWithDiscord() {
-    const origin = window.location.origin
-    const next =
-      new URLSearchParams(window.location.search).get('next') ?? '/'
-
     await supabase.auth.signInWithOAuth({
       provider: 'discord',
       options: {
-        redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
+        // DO NOT set redirectTo
+        // Supabase will handle the callback correctly
       },
     })
   }
