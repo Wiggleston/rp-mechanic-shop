@@ -28,7 +28,7 @@ export async function upsertRecipeAction(_prev: any, formData: FormData) {
 
     if (cleaned.length === 0) return { ok: false, message: 'All component quantities must be > 0.' }
 
-    const supabase = await supabaseServer()
+    const supabase = supabaseServer
 
     // 1) Find existing recipe
     const { data: existing, error: exErr } = await supabase
@@ -82,7 +82,7 @@ export async function loadRecipeComponentsAction(_prev: any, formData: FormData)
     const tier = Number(formData.get('tier') ?? 1)
     if (!crafted_item_id) return { ok: false, message: 'Pick a crafted item.', components: [] }
 
-    const supabase = await supabaseServer()
+    const supabase = supabaseServer
 
     const { data: recipe, error: recipeErr } = await supabase
       .from('recipes')

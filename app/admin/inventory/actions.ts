@@ -13,7 +13,7 @@ export async function updateItemAction(_prevState: any, formData: FormData) {
 
     if (!id) return { ok: false, message: 'Missing item id.' }
 
-    const supabase = await supabaseServer()
+    const supabase = supabaseServer
 
     const { error } = await supabase
       .from('inventory_items')
@@ -42,7 +42,7 @@ export async function addItemAction(_prevState: any, formData: FormData) {
 
     if (!name || !category) return { ok: false, message: 'Name + Category required.' }
 
-    const supabase = await supabaseServer()
+    const supabase = supabaseServer
 
     const { error } = await supabase
       .from('inventory_items')
@@ -82,7 +82,7 @@ export async function bulkUpdateStockAction(_prevState: any, formData: FormData)
       }
     }
 
-    const supabase = await supabaseServer()
+    const supabase = supabaseServer
 
     const names = parsed.map((p) => p.name)
     const { data: items, error } = await supabase
