@@ -1,27 +1,39 @@
-'use client'
+import { NextResponse } from 'next/server'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
+export async function GET(request: Request) {
+  const url = new URL(request.url)
+  const code = url.searchParams.get('code')
 
-export default function AuthCallbackPage() {
-  const router = useRouter()
+  if (!code) {
+    return NextResponse.redirect(new URL('/login?err=no_code', url.origin))
+  }
 
-  useEffect(() => {
-    async function finish() {
-      // Ensures Supabase reads tokens (hash or code handled client-side)
-      await supabase.auth.getSession()
+  const cookieStore = await cookies()
+  const response = NextResponse.redirect(new URL('/', url.origin))
 
-      router.replace('/')
-      router.refresh()
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            response.cookies.set(name, value, options)
+          })
+        },
+      },
     }
-
-    finish()
-  }, [router])
-
-  return (
-    <main className="min-h-[60vh] p-6 flex items-center justify-center">
-      <p className="opacity-80">Finishing sign-in…</p>
-    </main>
   )
+
+  const { error } = await supabase.auth.exchangeCodeForSession(code)
+  if (error) {
+    return NextResponse.redirect(new URL(`/login?err=${encodeURIComponent(error.message)}`, url.origin))
+  }
+
+  return response
 }

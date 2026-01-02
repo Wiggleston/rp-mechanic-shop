@@ -1,40 +1,27 @@
 // lib/requireRole.ts
 import { redirect } from 'next/navigation'
-import { supabaseServer } from '@/lib/supabaseServer'
+import { supabaseSSR } from '@/lib/supabaseSSR'
 
 export type UserRole = 'worker' | 'manager' | 'admin'
 
-type ProfileRow = {
-  role: UserRole
-}
+type ProfileRow = { role: UserRole }
 
 export async function requireRole(roles: UserRole[]) {
-  const supabase = supabaseServer
+  const supabase = await supabaseSSR()
 
-  // 1️⃣ Ensure user is logged in
-  const { data: userRes, error: userErr } = await supabase.auth.getUser()
-
-  if (userErr || !userRes?.user) {
-    redirect('/login')
-  }
-
+  const { data: userRes } = await supabase.auth.getUser()
   const user = userRes.user
+  if (!user) redirect('/login')
 
-  // 2️⃣ Fetch role from profiles table
-  const { data: profile, error: profileErr } = await supabase
+  const { data: profile } = await supabase
     .from('profiles')
     .select('role')
     .eq('id', user.id)
     .single<ProfileRow>()
 
-  if (profileErr || !profile) {
-    redirect('/login')
-  }
+  if (!profile) redirect('/login')
 
-  // 3️⃣ Enforce role
-  if (!roles.includes(profile.role)) {
-    redirect('/')
-  }
+  if (!roles.includes(profile.role)) redirect('/')
 
   return profile.role
 }
