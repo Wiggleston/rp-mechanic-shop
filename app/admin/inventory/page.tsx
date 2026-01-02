@@ -17,7 +17,7 @@ type InventoryItem = {
 
 export default async function AdminInventoryPage() {
   // 🔐 Role-based access (replaces Admin PIN)
-  const role = await requireRole(['manager', 'admin'])
+  const role = await requireRole(['manager', 'admin'], '/admin/inventory')
 
   const supabase = supabaseServer
 

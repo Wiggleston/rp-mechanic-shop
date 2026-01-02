@@ -8,7 +8,7 @@ export type InventoryItem = { id: string; name: string; category: string; stock:
 
 export default async function AdminRecipesPage() {
   // 🔐 Role-based access (replaces Admin PIN)
-  const role = await requireRole(['manager','admin'], '/admin/recipes')
+  const role = await requireRole(['manager', 'admin'], '/admin/recipes')
 
   const supabase = supabaseServer
 
