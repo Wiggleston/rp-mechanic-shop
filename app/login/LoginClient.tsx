@@ -4,12 +4,6 @@ import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
-function prettyErr(code: string) {
-  if (code === 'no_code') return 'Login failed: no OAuth code returned.'
-  if (code === 'exchange_failed') return 'Login failed: could not create session (exchange failed).'
-  return `Login failed: ${code}`
-}
-
 export default function LoginClient() {
   const search = useSearchParams()
   const next = search.get('next') ?? '/'
@@ -17,15 +11,10 @@ export default function LoginClient() {
 
   async function signInWithDiscord() {
     const origin = window.location.origin
-
-    const { error } = await supabase.auth.signInWithOAuth({
+    await supabase.auth.signInWithOAuth({
       provider: 'discord',
-      options: {
-        redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
-      },
+      options: { redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}` },
     })
-
-    if (error) console.error(error.message)
   }
 
   return (
@@ -38,25 +27,11 @@ export default function LoginClient() {
           </Link>
         </div>
 
-        <p className="text-sm opacity-70">Sign in with Discord to continue.</p>
+        {err ? <p className="text-sm">❌ {err}</p> : <p className="text-sm opacity-70">Sign in with Discord to continue.</p>}
 
-        {err ? (
-          <p className="text-sm rounded-lg border border-red-500/30 bg-red-500/10 p-3">
-            ❌ {prettyErr(err)}
-          </p>
-        ) : null}
-
-        <button
-          onClick={signInWithDiscord}
-          className="w-full rounded bg-white text-black font-semibold p-2"
-        >
+        <button onClick={signInWithDiscord} className="w-full rounded bg-white text-black font-semibold p-2">
           Continue with Discord
         </button>
-
-        <p className="text-xs opacity-60">
-          If you get “redirect URL not allowed”, add <span className="font-mono">/auth/callback</span> to
-          Supabase Redirect URLs.
-        </p>
       </div>
     </main>
   )
