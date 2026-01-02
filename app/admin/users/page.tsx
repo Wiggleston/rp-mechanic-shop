@@ -10,7 +10,7 @@ type Profile = {
 }
 
 export default async function AdminUsersPage() {
-  await requireRole(['admin'])
+  await requireRole(['admin'], '/admin/users')
 
   // service role client is fine for admin listing
   const { data, error } = await supabaseServer

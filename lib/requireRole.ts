@@ -3,15 +3,17 @@ import { redirect } from 'next/navigation'
 import { supabaseSSR } from '@/lib/supabaseSSR'
 
 export type UserRole = 'worker' | 'manager' | 'admin'
-
 type ProfileRow = { role: UserRole }
 
-export async function requireRole(roles: UserRole[]) {
+export async function requireRole(roles: UserRole[], nextPath: string) {
   const supabase = await supabaseSSR()
 
   const { data: userRes } = await supabase.auth.getUser()
   const user = userRes.user
-  if (!user) redirect('/login')
+
+  if (!user) {
+    redirect(`/login?next=${encodeURIComponent(nextPath)}`)
+  }
 
   const { data: profile } = await supabase
     .from('profiles')
@@ -19,9 +21,13 @@ export async function requireRole(roles: UserRole[]) {
     .eq('id', user.id)
     .single<ProfileRow>()
 
-  if (!profile) redirect('/login')
+  if (!profile) {
+    redirect(`/login?next=${encodeURIComponent(nextPath)}`)
+  }
 
-  if (!roles.includes(profile.role)) redirect('/')
+  if (!roles.includes(profile.role)) {
+    redirect('/')
+  }
 
   return profile.role
 }
