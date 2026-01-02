@@ -12,11 +12,13 @@ export async function GET(req: Request) {
 
   const supabase = await supabaseServer()
 
-  const { error } = await supabase.auth.exchangeCodeForSession(code)
+const { error } = await supabase.auth.exchangeCodeForSession(code)
 
-  if (error) {
-    return NextResponse.redirect(new URL('/login?err=exchange_failed', url.origin))
-  }
+if (error) {
+  console.error('EXCHANGE ERROR:', error)
+  return NextResponse.redirect(
+    new URL(`/login?err=${encodeURIComponent(error.message)}`, url.origin)
+  )
+}
 
-  return NextResponse.redirect(new URL(next, url.origin))
 }
