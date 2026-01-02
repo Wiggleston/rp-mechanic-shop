@@ -1,12 +1,12 @@
-// lib/requireRole.ts
+// lib/requireRoleAction.ts
 import { redirect } from 'next/navigation'
 import { supabaseServer } from '@/lib/supabaseServer'
 
 export type UserRole = 'worker' | 'manager' | 'admin'
 type ProfileRow = { role: UserRole }
 
-export async function requireRole(allowed: UserRole[]) {
-  const supabase = supabaseServer()
+export async function requireRoleAction(allowed: UserRole[]) {
+  const supabase = await supabaseServer()
 
   const { data } = await supabase.auth.getUser()
   const user = data.user
@@ -18,7 +18,9 @@ export async function requireRole(allowed: UserRole[]) {
     .eq('id', user.id)
     .single<ProfileRow>()
 
-  if (!profile || !allowed.includes(profile.role)) redirect('/')
+  if (!profile || !allowed.includes(profile.role)) {
+    throw new Error('Not authorized')
+  }
 
   return profile.role
 }

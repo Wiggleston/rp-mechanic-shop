@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { requireRole } from '@/lib/requireRole'
-import { supabaseServer } from '@/lib/supabaseServer'
+import { supabaseAdmin } from '@/lib/supabaseAdmin'
 
 type Profile = {
   id: string
@@ -10,10 +10,10 @@ type Profile = {
 }
 
 export default async function AdminUsersPage() {
-  await requireRole(['admin'], '/admin/users')
+  await requireRole(['admin'])
 
   // service role client is fine for admin listing
-  const { data, error } = await supabaseServer
+  const { data, error } = await supabaseAdmin
     .from('profiles')
     .select('id,email,role,display_name')
     .order('role')

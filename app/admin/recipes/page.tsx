@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { supabaseServer } from '@/lib/supabaseServer'
+import { supabaseAdmin } from '@/lib/supabaseAdmin'
 import { requireRole } from '@/lib/requireRole'
 import RecipeBuilder from './RecipeBuilder'
 
@@ -8,9 +8,9 @@ export type InventoryItem = { id: string; name: string; category: string; stock:
 
 export default async function AdminRecipesPage() {
   // 🔐 Role-based access (replaces Admin PIN)
-  const role = await requireRole(['manager', 'admin'], '/admin/recipes')
+  const role = await requireRole(['manager', 'admin'])
 
-  const supabase = supabaseServer
+  const supabase = supabaseAdmin
 
   const { data: craftedItems, error: craftedErr } = await supabase
     .from('crafted_items')
