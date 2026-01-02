@@ -6,7 +6,7 @@ export type UserRole = 'worker' | 'manager' | 'admin'
 type ProfileRow = { role: UserRole }
 
 export async function requireRole(allowed: UserRole[]) {
-  const supabase = supabaseServer()
+  const supabase = await supabaseServer()
 
   const { data } = await supabase.auth.getUser()
   const user = data.user

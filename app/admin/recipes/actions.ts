@@ -1,9 +1,14 @@
 'use server'
 
-import { supabaseServer } from '@/lib/supabaseServer'
 import { revalidatePath } from 'next/cache'
+import { supabaseAdmin } from '@/lib/supabaseAdmin'
+import { requireRoleAction } from '@/lib/requireRoleAction'
+
+type ComponentInput = { inventory_item_id: string; qty_required: number }
 
 export async function upsertRecipeAction(_prev: any, formData: FormData) {
+  await requireRoleAction(['manager', 'admin'])
+
   try {
     const crafted_item_id = String(formData.get('crafted_item_id') ?? '')
     const tier = Number(formData.get('tier') ?? 1)
@@ -11,14 +16,19 @@ export async function upsertRecipeAction(_prev: any, formData: FormData) {
     if (!crafted_item_id) return { ok: false, message: 'Pick a crafted item.' }
     if (tier < 1 || tier > 5) return { ok: false, message: 'Tier must be 1–5.' }
 
-    const raw = String(formData.get('components_json') ?? '')
-    const components = JSON.parse(raw) as Array<{ inventory_item_id: string; qty_required: number }>
+    const raw = String(formData.get('components_json') ?? '[]')
+
+    let components: ComponentInput[] = []
+    try {
+      components = JSON.parse(raw) as ComponentInput[]
+    } catch {
+      return { ok: false, message: 'Invalid components payload.' }
+    }
 
     if (!Array.isArray(components) || components.length === 0) {
       return { ok: false, message: 'Select at least 1 component.' }
     }
 
-    // sanitize
     const cleaned = components
       .map((c) => ({
         inventory_item_id: String(c.inventory_item_id),
@@ -28,10 +38,8 @@ export async function upsertRecipeAction(_prev: any, formData: FormData) {
 
     if (cleaned.length === 0) return { ok: false, message: 'All component quantities must be > 0.' }
 
-    const supabase = supabaseServer
-
     // 1) Find existing recipe
-    const { data: existing, error: exErr } = await supabase
+    const { data: existing, error: exErr } = await supabaseAdmin
       .from('recipes')
       .select('id')
       .eq('crafted_item_id', crafted_item_id)
@@ -40,11 +48,11 @@ export async function upsertRecipeAction(_prev: any, formData: FormData) {
 
     if (exErr) return { ok: false, message: exErr.message }
 
-    let recipeId = existing?.[0]?.id as string | undefined
+    let recipeId = (existing?.[0]?.id as string | undefined) ?? undefined
 
     // 2) Create recipe if missing
     if (!recipeId) {
-      const { data: created, error: createErr } = await supabase
+      const { data: created, error: createErr } = await supabaseAdmin
         .from('recipes')
         .insert({ crafted_item_id, tier })
         .select('id')
@@ -54,17 +62,17 @@ export async function upsertRecipeAction(_prev: any, formData: FormData) {
       recipeId = created.id
     }
 
-    // 3) Replace components (simple + reliable)
-    const { error: delErr } = await supabase
+    // 3) Replace components
+    const { error: delErr } = await supabaseAdmin
       .from('recipe_components')
       .delete()
       .eq('recipe_id', recipeId)
 
     if (delErr) return { ok: false, message: delErr.message }
 
-    const { error: insErr } = await supabase
+    const { error: insErr } = await supabaseAdmin
       .from('recipe_components')
-      .insert(cleaned.map((c) => ({ recipe_id: recipeId, ...c })))
+      .insert(cleaned.map((c) => ({ recipe_id: recipeId!, ...c })))
 
     if (insErr) return { ok: false, message: insErr.message }
 
@@ -77,14 +85,15 @@ export async function upsertRecipeAction(_prev: any, formData: FormData) {
 }
 
 export async function loadRecipeComponentsAction(_prev: any, formData: FormData) {
+  await requireRoleAction(['manager', 'admin'])
+
   try {
     const crafted_item_id = String(formData.get('crafted_item_id') ?? '')
     const tier = Number(formData.get('tier') ?? 1)
+
     if (!crafted_item_id) return { ok: false, message: 'Pick a crafted item.', components: [] }
 
-    const supabase = supabaseServer
-
-    const { data: recipe, error: recipeErr } = await supabase
+    const { data: recipe, error: recipeErr } = await supabaseAdmin
       .from('recipes')
       .select('id')
       .eq('crafted_item_id', crafted_item_id)
@@ -95,7 +104,7 @@ export async function loadRecipeComponentsAction(_prev: any, formData: FormData)
     if (recipeErr) return { ok: false, message: recipeErr.message, components: [] }
     if (!recipe?.id) return { ok: true, message: 'No recipe yet for this item+tier.', components: [] }
 
-    const { data: comps, error: compsErr } = await supabase
+    const { data: comps, error: compsErr } = await supabaseAdmin
       .from('recipe_components')
       .select('inventory_item_id,qty_required')
       .eq('recipe_id', recipe.id)

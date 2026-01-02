@@ -1,23 +1,29 @@
 'use server'
 
-import { supabaseServer } from '@/lib/supabaseServer'
 import { revalidatePath } from 'next/cache'
+import { supabaseAdmin } from '@/lib/supabaseAdmin'
+import { requireRoleAction } from '@/lib/requireRoleAction'
 
 export async function updateItemAction(_prevState: any, formData: FormData) {
+  await requireRoleAction(['manager', 'admin'])
+
   try {
     const id = String(formData.get('id') ?? '')
     const stock = Number(formData.get('stock') ?? 0)
-    const location = String(formData.get('location') ?? '')
-    const notes = String(formData.get('notes') ?? '')
+    const location = String(formData.get('location') ?? '').trim()
+    const notes = String(formData.get('notes') ?? '').trim()
     const low_stock_threshold = Number(formData.get('low_stock_threshold') ?? 2)
 
     if (!id) return { ok: false, message: 'Missing item id.' }
 
-    const supabase = supabaseServer
-
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('inventory_items')
-      .update({ stock, location, notes, low_stock_threshold })
+      .update({
+        stock,
+        location: location || null,
+        notes: notes || null,
+        low_stock_threshold,
+      })
       .eq('id', id)
 
     if (error) return { ok: false, message: error.message }
@@ -32,21 +38,28 @@ export async function updateItemAction(_prevState: any, formData: FormData) {
 }
 
 export async function addItemAction(_prevState: any, formData: FormData) {
+  await requireRoleAction(['manager', 'admin'])
+
   try {
     const name = String(formData.get('name') ?? '').trim()
     const category = String(formData.get('category') ?? '').trim()
     const stock = Number(formData.get('stock') ?? 0)
-    const location = String(formData.get('location') ?? '')
-    const notes = String(formData.get('notes') ?? '')
+    const location = String(formData.get('location') ?? '').trim()
+    const notes = String(formData.get('notes') ?? '').trim()
     const low_stock_threshold = Number(formData.get('low_stock_threshold') ?? 2)
 
     if (!name || !category) return { ok: false, message: 'Name + Category required.' }
 
-    const supabase = supabaseServer
-
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('inventory_items')
-      .insert({ name, category, stock, location, notes, low_stock_threshold })
+      .insert({
+        name,
+        category,
+        stock,
+        location: location || null,
+        notes: notes || null,
+        low_stock_threshold,
+      })
 
     if (error) return { ok: false, message: error.message }
 
@@ -59,6 +72,8 @@ export async function addItemAction(_prevState: any, formData: FormData) {
 }
 
 export async function bulkUpdateStockAction(_prevState: any, formData: FormData) {
+  await requireRoleAction(['manager', 'admin'])
+
   try {
     const raw = String(formData.get('bulk') ?? '')
     if (!raw.trim()) return { ok: false, message: 'Paste at least one line.' }
@@ -82,10 +97,9 @@ export async function bulkUpdateStockAction(_prevState: any, formData: FormData)
       }
     }
 
-    const supabase = supabaseServer
-
     const names = parsed.map((p) => p.name)
-    const { data: items, error } = await supabase
+
+    const { data: items, error } = await supabaseAdmin
       .from('inventory_items')
       .select('id,name')
       .in('name', names)
@@ -94,11 +108,13 @@ export async function bulkUpdateStockAction(_prevState: any, formData: FormData)
 
     const idByName = new Map((items ?? []).map((i) => [i.name, i.id]))
     const missing = parsed.filter((p) => !idByName.has(p.name)).map((p) => p.name)
-    if (missing.length > 0) return { ok: false, message: `These item names were not found:\n${missing.join('\n')}` }
+    if (missing.length > 0) {
+      return { ok: false, message: `These item names were not found:\n${missing.join('\n')}` }
+    }
 
     for (const p of parsed) {
       const id = idByName.get(p.name)!
-      const { error: updErr } = await supabase
+      const { error: updErr } = await supabaseAdmin
         .from('inventory_items')
         .update({ stock: p.stock })
         .eq('id', id)
